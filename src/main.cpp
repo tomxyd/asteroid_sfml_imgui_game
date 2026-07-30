@@ -1,44 +1,22 @@
-#include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Clock.hpp>
-#include <SFML/Window/Event.hpp>
+#include <SFML/Graphics.hpp>
+#include "Vec2.hpp"
+//#include "Game.h"
 
-#include "imgui-SFML.h"
-#include "imgui.h"
-
-int main() {
-    sf::RenderWindow window(sf::VideoMode(1280, 720), "ImGui + SFML = <3");
-    window.setFramerateLimit(60);
-    ImGui::SFML::Init(window);
-
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
-
-    sf::Clock deltaClock;
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            ImGui::SFML::ProcessEvent(event);
-
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
-        }
-
-        ImGui::SFML::Update(window, deltaClock.restart());
-
-        ImGui::Begin("Hello, world!");
-        ImGui::Button("Look at this pretty button");
-        ImGui::End();
+#include <iostream>
 
 
-        window.clear();
-        window.draw(shape);
-        ImGui::SFML::Render(window);
-        window.display();
-    }
 
-    ImGui::SFML::Shutdown();
+int main()
+{
+	// test each Vec2 class functions before proceeding to the next
+	Vec2 a(3.f, 4.f);
+	Vec2 b(5.f, 1.f);
 
-    return 0;
+	Vec2 c = a.normalize();
+
+	std::cout << c.x << ", " << c.y;
+
+
+	// Game g("config.txt");
+	// g.run();
 }
