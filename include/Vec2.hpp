@@ -1,10 +1,7 @@
+#pragma once
 #include <SFML/Graphics.hpp>
 #include <cassert>
 #include <cmath>
-
-
-#pragma once
-
 
 template<typename T>
 class Vec2

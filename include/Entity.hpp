@@ -4,7 +4,13 @@
 #include "Component.hpp"
 
 
-using ComponentTuple = std::tuple<int>;
+using ComponentTuple = std::tuple<
+	CTransform,
+	CShape,
+	CCollision,
+	CScore,
+	CLifespan,
+	CInput>;
 
 class Entity
 {
@@ -18,10 +24,32 @@ public:
 	Entity(std::string tag, std::size_t id)
 		: m_tag(tag), m_id(id) { }
 
-	//void	add<T>(args);
-	//T&		get<T>();
-	//bool	has<T>;
-	//void	remove<T>;
+	template <typename T, typename... TArgs>
+	T& add(TArgs&&... mArgs)
+	{
+		auto& component = get<T>();
+		component = T(std::forward<TArgs>(mArgs)...);
+		component.exists = true;
+		return component;
+	}
+
+	template <typename T>
+	T& get() 
+	{
+		return std::get<T>(m_component);
+	}
+
+	template <typename T>
+	bool has() const
+	{
+		return get<T>().exists;
+	}
+
+	template <typename T>
+	void	remove()
+	{
+		get<T>() = T();
+	}
 
 
 	std::size_t id() const

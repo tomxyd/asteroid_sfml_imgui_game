@@ -18,7 +18,10 @@ private:
 	std::size_t m_total_entities = 0;
 
 
-	void remove_dead_entities(const EntityVec& entity);
+	void remove_dead_entities(const EntityVec& entity)
+	{
+
+	}
 
 public:
 

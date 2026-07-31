@@ -24,9 +24,15 @@ FetchContent_Declare(imgui-sfml
     GIT_TAG 2.6.x
 )
 
+# fixed .dll errors
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(IMGUI_SFML_USE_STATIC_LIBS ON CACHE BOOL "" FORCE)
+
+
 # SFML
 option(SFML_BUILD_AUDIO "Build audio" OFF)
 option(SFML_BUILD_NETWORK "Build network" OFF)
+
 FetchContent_MakeAvailable(sfml)
 
 # Dear ImGui
@@ -58,4 +64,4 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${PROJECT_SOURCE_DIR}
 
 
 # Link against SFML + ImGui-SFML
-target_link_libraries("${PROJECT_NAME}" PRIVATE sfml-graphics ImGui-SFML::ImGui-SFML)
+target_link_libraries("${PROJECT_NAME}" PRIVATE sfml-graphics ImGui-SFML::ImGui-SFML sfml-window sfml-system)
