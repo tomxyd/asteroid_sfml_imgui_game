@@ -54,5 +54,8 @@ endif()
 
 target_compile_features("${PROJECT_NAME}" PRIVATE cxx_std_17)
 
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${PROJECT_SOURCE_DIR}/include")
+
+
 # Link against SFML + ImGui-SFML
 target_link_libraries("${PROJECT_NAME}" PRIVATE sfml-graphics ImGui-SFML::ImGui-SFML)

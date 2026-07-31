@@ -121,3 +121,6 @@ public:
 	}
 };
 
+using Vec2f = Vec2<float>;
+
+

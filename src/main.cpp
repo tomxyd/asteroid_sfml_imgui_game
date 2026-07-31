@@ -1,22 +1,16 @@
-#include <SFML/Graphics.hpp>
-#include "Vec2.hpp"
-//#include "Game.h"
-
 #include <iostream>
+#include "EntityManager.hpp"
 
 
 
 int main()
 {
-	// test each Vec2 class functions before proceeding to the next
-	Vec2 a(3.f, 4.f);
-	Vec2 b(5.f, 1.f);
+	EntityManager m_entities;
 
-	Vec2 c = a.normalize();
-
-	std::cout << c.x << ", " << c.y;
-
-
+	//spawn enemy
+	auto e = m_entities.add_entity("enemy");
+	//e->add<CTransform>({10.f, 10.f});
 	// Game g("config.txt");
 	// g.run();
+	return 0;
 }
