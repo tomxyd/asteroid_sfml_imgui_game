@@ -10,15 +10,15 @@ public:
 
 class CTransform : public Component
 {
-private:
-	Vec2f m_pos = { 0,0 };
-	Vec2f m_velocity = { 0, 0 };
+
 public:
+	Vec2f pos = { 0,0 };
+	Vec2f vel = { 0, 0 };
 	CTransform() = default;
 	CTransform(Vec2f position)
-		:m_pos(position) { }
+		:pos(position) { }
 	CTransform(const Vec2f& p, const Vec2f &v)
-		: m_pos(p), m_velocity(v) { }
+		: pos(p), vel(v) { }
 };
 
 class CShape : public Component

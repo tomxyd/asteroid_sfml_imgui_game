@@ -20,12 +20,30 @@ private:
 
 	void remove_dead_entities(const EntityVec& entity)
 	{
-
+		//TO DO
+		// remove all entites from vec that are not alive
 	}
 
 public:
 
 	EntityManager() = default;
+	void update()
+	{
+		for (auto e : m_entities_to_add)
+		{
+			m_entities.push_back(e);
+			m_entity_map[e->tag()].push_back(e);
+		}
+
+		m_entities_to_add.clear();
+
+		remove_dead_entities(m_entities);
+
+		for (auto& [tag, entity_vec] : m_entity_map)
+		{
+			remove_dead_entities(entity_vec);
+		}
+	}
 	std::shared_ptr<Entity> add_entity(const std::string& tag)
 	{
 		//create a new Entity object
