@@ -1,10 +1,14 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
 #include "Entity.hpp"
 #include "EntityManager.hpp"
 #include <imgui.h>
 #include <imgui-SFML.h>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 struct PlayerConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V; float s; };
 struct EnemyConfig { int SR, CR, OR, OG, OB, OT, V_MIN, V_MAX, L, SI; float S_MIN, S_MAX; };

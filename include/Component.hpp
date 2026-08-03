@@ -26,6 +26,18 @@ class CShape : public Component
 public:
 	sf::CircleShape shape;
 	CShape() {};
+	CShape(float radius, std::size_t vertices, const sf::Color& fill, const sf::Color& outline, const int& thickness)
+		: shape(radius, vertices)
+	{
+		shape.setFillColor(fill);
+		shape.setOutlineColor(outline);
+		shape.setOutlineThickness(thickness);
+		shape.setOrigin({ radius, radius });
+	}
+	sf::CircleShape& get_shape()
+	{
+		return shape;
+	}
 };
 
 class CCollision : public Component

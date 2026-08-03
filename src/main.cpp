@@ -5,7 +5,7 @@
 
 int main()
 {
-	Game g("config.txt");
+	Game g(RESOURCES_PATH "config.txt");
 	g.run();
 	return 0;
 }

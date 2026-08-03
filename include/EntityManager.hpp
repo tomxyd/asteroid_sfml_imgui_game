@@ -18,10 +18,18 @@ private:
 	std::size_t m_total_entities = 0;
 
 
-	void remove_dead_entities(const EntityVec& entity)
+	void remove_dead_entities(EntityVec& entity)
 	{
 		//TO DO
 		// remove all entites from vec that are not alive
+		for (std::size_t i = 0; i < entity.size(); ++i)
+		{
+			if (!entity[i]->is_alive())
+			{
+				//remove entity from vector
+				entity.erase(entity.begin() + i);
+			}
+		}
 	}
 
 public:
