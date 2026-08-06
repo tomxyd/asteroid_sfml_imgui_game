@@ -22,9 +22,9 @@ public:
 		: x(vec.x), y(vec.y)
 	{ }
 
-	Vec2(const sf::Vector2i& vec)
-		: x(T(vec.x)), y(T(vec.y))
-	{ }
+	//Vec2(const sf::Vector2i& vec)
+	//	: x(T(vec.x)), y(T(vec.y))
+	//{ }
 
 
 	//allow automatic conversion to sf::Vector2
@@ -118,6 +118,7 @@ public:
 	}
 };
 
+using Vec2i = Vec2<int>;
 using Vec2f = Vec2<float>;
 
 
