@@ -162,8 +162,58 @@ void Game::init(const std::string& config)
 						}
 					}
 				}
+
+				if (word == "Bullet")
+				{
+					int value;
+					while (ss >> value)
+					{
+						word_count++;
+						switch (word_count)
+						{
+						case 1:
+							m_bullet_config.SR = value;
+							break;
+						case 2:
+							m_bullet_config.CR = value;
+							break;
+						case 3:
+							m_bullet_config.S = value;
+							break;
+						case 4:
+							m_bullet_config.FR = value;
+							break;
+						case 5:
+							m_bullet_config.FG = value;
+							break;
+						case 6:
+							m_bullet_config.FB = value;
+							break;
+						case 7:
+							m_bullet_config.OR = value;
+							break;
+						case 8:
+							m_bullet_config.OG = value;
+							break;
+						case 9:
+							m_bullet_config.OB = value;
+							break;
+						case 10:
+							m_bullet_config.OT = value;
+							break;
+						case 11:
+							m_bullet_config.V = value;
+							break;
+						case 12:
+							m_bullet_config.L = value;
+							break;
+						default:
+							break;
+						}
+					}
+				}
 			}
-			if (line_count == 4)
+			if (line_count == 5)
 				break;
 		}
 
@@ -203,6 +253,7 @@ void Game::run()
 		s_user_input();
 		s_gui();
 		s_movement();
+		s_collision();
 		s_render();
 
 		m_current_frame++;
@@ -216,6 +267,8 @@ void Game::s_user_input()
 {
 	//TO DO: handle user input here
 	// 
+	if (!player()->is_alive())
+		return;
 
 	sf::Event event;
 	while (m_window.pollEvent(event))
@@ -227,17 +280,44 @@ void Game::s_user_input()
 			m_window.close();
 		}
 
-		if ((event.type == sf::Event::KeyPressed) && event.key.code == sf::Keyboard::W)
+		auto& player_input = player()->get<CInput>();
+		
+
+		if ((event.type == sf::Event::KeyPressed))
 		{
-			std::cout << "W key pressed\n";
+			if (event.key.code == sf::Keyboard::D)
+				player_input.x_axis = 1;
+			
+			if(event.key.code == sf::Keyboard::A)
+				player_input.x_axis = -1;
+
+			if (event.key.code == sf::Keyboard::W)
+				player_input.y_axis = -1;
+
+			if (event.key.code == sf::Keyboard::S)
+				player_input.y_axis = 1;
+
+		}
+		else if((event.type == sf::Event::KeyReleased))
+		{
+			if (event.key.code == sf::Keyboard::D)
+				player_input.x_axis = 0;
+
+			if (event.key.code == sf::Keyboard::A)
+				player_input.x_axis = 0;
+
+			if (event.key.code == sf::Keyboard::W)
+				player_input.y_axis = 0;
+
+			if (event.key.code == sf::Keyboard::S)
+				player_input.y_axis = 0;
 		}
 
 
 		Vec2i mouse_position = sf::Mouse::getPosition(m_window);
 		if ((event.type == sf::Event::MouseButtonPressed) && event.mouseButton.button == sf::Mouse::Left)
 		{
-			std::cout << "Left mouse key pressed\n";
-			std::cout << "at location: " << mouse_position.x << ", " << mouse_position.y << '\n';
+
 		}
 	}
 }
@@ -249,6 +329,12 @@ void Game::s_gui()
 	{
 		spawn_enemy();
 	};
+
+	if (ImGui::Button("Spawn Bullet"))
+	{
+		spawn_bullet(player(), Vec2f(1.f, 1.f));
+	}
+
 	ImGui::End();
 	ImGui::EndFrame();
 }
@@ -276,11 +362,19 @@ void Game::s_movement()
 	{
 		e->get<CShape>().get_shape().setPosition(e->get<CTransform>().pos);
 	}
+	if (!player()->is_alive())
+		return;
 
-	//auto& transform = player()->get<CTransform>();
-	//transform.pos.x += transform.vel.x;
-	//transform.pos.y += transform.vel.y;
+	auto& player_input = player()->get<CInput>();
+	auto& transform = player()->get<CTransform>();
+	Vec2f velocity(player_input.x_axis * transform.vel.x, player_input.y_axis * transform.vel.y);
+	//TO DO: Normalize movement to make it the velocity uniform diagonally
+	transform.pos += velocity;
 
+	for (auto& e : m_entities.get_entities("bullet"))
+	{
+		auto& transform = e->get<CTransform>().pos;
+	}
 }
 
 void Game::s_collision()
@@ -293,12 +387,51 @@ void Game::s_collision()
 		for (auto e : m_entities.get_entities("enemy"))
 		{
 			// do collision logic
+			Vec2f enemy_pos = e->get<CTransform>().pos;
+			Vec2f enemy_radii{ enemy_pos.x + m_enemy_config.CR, enemy_pos.y + m_enemy_config.CR };
+			Vec2f bullet_pos = b->get<CTransform>().pos;
+			Vec2f bullet_radii{ bullet_pos.x + m_bullet_config.CR, bullet_pos.y + m_bullet_config.CR };
+			float distance = enemy_radii.dist(bullet_radii);
+			if (distance < m_enemy_config.CR + m_bullet_config.CR)
+			{
+				//spawn small enemies
+			}
 		}
 
 		for (auto s : m_entities.get_entities("small enemy"))
 		{
 			// do collision logic
+			Vec2f small_enemy_pos = s->get<CTransform>().pos;
+			Vec2f enemy_radii{ small_enemy_pos.x + m_enemy_config.CR, small_enemy_pos.y + m_enemy_config.CR };
+			Vec2f bullet_pos = b->get<CTransform>().pos;
+			Vec2f bullet_radii{ bullet_pos.x + m_bullet_config.CR, bullet_pos.y + m_bullet_config.CR };
+			float distance = enemy_radii.dist(bullet_radii);
+			if (distance < m_enemy_config.CR + m_bullet_config.CR)
+			{
+				//spawn small enemies
+			}
 		}
+	}
+
+	if (!player()->is_alive())
+		return;
+
+	Vec2f player_pos = player()->get<CTransform>().pos;
+	for (auto e : m_entities.get_entities("enemy"))
+	{
+		//collision between player and enemies
+		Vec2f enemy_pos = e->get<CTransform>().pos;
+		Vec2f enemy_radii{ enemy_pos.x + m_enemy_config.CR, enemy_pos.y + m_enemy_config.CR };
+		Vec2f player_radii = Vec2f(player_pos.x + m_player_config.CR, player_pos.y + m_player_config.CR);
+		float distance = enemy_radii.dist(player_radii);
+		if (distance < m_player_config.CR + m_enemy_config.CR)
+		{
+			//collided
+			std::cout << "player collides with: " << e->tag() << e->id() << '\n';
+			//player()->destroy();
+			//pause game for now
+		}
+
 	}
 }
 
@@ -316,7 +449,7 @@ void Game::spawn_player()
 
 	//give this entity a transform so it spawns at middle of the screen
 	Vec2f screen_middle_pos{ m_window_config.X / 2, m_window_config.Y / 2 };
-	e->add<CTransform>(screen_middle_pos, Vec2f(1.f, 1.f));
+	e->add<CTransform>(screen_middle_pos, Vec2f(m_player_config.s, m_player_config.s));
 
 	//give this entity a shape
 	e->add<CShape>(static_cast<float>(
@@ -326,6 +459,7 @@ void Game::spawn_player()
 		sf::Color{(sf::Uint8)m_player_config.OR, (sf::Uint8)m_player_config.OG,(sf::Uint8)m_player_config.OB },
 		m_player_config.OT
 		);
+
 	//give the entity an input
 	e->add<CInput>();
 }
@@ -377,6 +511,21 @@ void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
 {
 	//create entity
 	auto e = m_entities.add_entity("bullet");
+
+	//spawn bullet at entity pos
+	Vec2f entity_pos = entity->get<CTransform>().pos;
+	e->add<CTransform>(entity_pos, Vec2f(1.f, 1.f));
+
+	//add Shape to entity
+	e->add<CShape>(
+		m_bullet_config.SR,
+		m_bullet_config.V,
+		sf::Color{ (sf::Uint8)m_bullet_config.FR, (sf::Uint8)m_bullet_config.FG,(sf::Uint8)m_bullet_config.FB },
+		sf::Color{ (sf::Uint8)m_bullet_config.OR, (sf::Uint8)m_bullet_config.OG,(sf::Uint8)m_bullet_config.OB },
+		m_bullet_config.OT
+	);
+
+	//add lifespan to entity
 }
 
 void Game::spawn_special_weapon(std::shared_ptr<Entity> entity)
@@ -393,6 +542,8 @@ std::shared_ptr<Entity> Game::player()
 {
 	return m_entities.get_entities("player").back();
 }
+
+
 
 
 

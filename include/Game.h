@@ -67,3 +67,4 @@ public:
 	std::shared_ptr<Entity> player();
 
 };
+

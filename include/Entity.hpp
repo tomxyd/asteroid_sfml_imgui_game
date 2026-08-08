@@ -51,7 +51,6 @@ public:
 		get<T>() = T();
 	}
 
-
 	std::size_t id() const
 	{
 		return m_id;

@@ -12,8 +12,8 @@ class CTransform : public Component
 {
 
 public:
-	Vec2f pos = { 0,0 };
-	Vec2f vel = { 0, 0 };
+	Vec2f pos = { 0.f,0.f };
+	Vec2f vel = { 0.f,0.f };
 	CTransform() = default;
 	CTransform(Vec2f position)
 		:pos(position) { }
@@ -51,7 +51,7 @@ public:
 class CScore : public Component
 {
 public:
-	int score;
+	int score = 0;
 	CScore() {};
 };
 
@@ -67,11 +67,9 @@ public:
 class CInput : public Component
 {
 public:
-	int up;
-	int down;
-	int left;
-	int right;
-	int shoot;
+	int y_axis = 0;
+	int x_axis = 0;
+	int shoot = 0;
 	CInput() {};
 };
 
