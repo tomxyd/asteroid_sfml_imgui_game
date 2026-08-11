@@ -376,16 +376,16 @@ void Game::s_movement()
 		return;
 
 	auto& player_input = player()->get<CInput>();
-	auto& transform = player()->get<CTransform>();
+	auto& player_transform = player()->get<CTransform>();
 
 	//Restrict player's movement to the window screen
-	if (transform.pos.x - m_player_config.SR <= 0)
+	if (player_transform.pos.x - m_player_config.SR <= 0)
 		player_input.left = false;
-	if (transform.pos.x + m_player_config.SR >= m_window_config.X)
+	if (player_transform.pos.x + m_player_config.SR >= m_window_config.X)
 		player_input.right = false;
-	if (transform.pos.y - m_player_config.SR <= 0)
+	if (player_transform.pos.y - m_player_config.SR <= 0)
 		player_input.up = false;
-	if (transform.pos.y + m_player_config.SR >= m_window_config.Y)
+	if (player_transform.pos.y + m_player_config.SR >= m_window_config.Y)
 		player_input.down = false;
 
 	//Move player
@@ -413,21 +413,21 @@ void Game::s_movement()
 	else
 		norm_velocity = Vec2f(0.f, 0.f);
 
-	transform.vel = norm_velocity;
+	player_transform.vel = norm_velocity;
 
-	transform.pos.x += transform.vel.x * m_player_config.s;
-	transform.pos.y += transform.vel.y * m_player_config.s;
+	player_transform.pos.x += player_transform.vel.x * m_player_config.s;
+	player_transform.pos.y += player_transform.vel.y * m_player_config.s;
 		
 	// Move bullets towards mouse position, mouse position being the velocity
-
-	for (auto& e : m_entities.get_entities("bullet"))
+	for (auto& b : m_entities.get_entities("bullet"))
 	{
-		auto& transform = e->get<CTransform>();
+		auto& transform = b->get<CTransform>();
 		//move towards mouse position
-		Vec2f target_position = transform.vel - transform.pos;
-		Vec2f norm_target = target_position.normalize();
-		transform.pos.x += norm_target.x * m_bullet_config.S;
-		transform.pos.y += norm_target.y * m_bullet_config.S;
+		Vec2f target_position = transform.vel - player_transform.pos;
+		if (target_position.x != 0 || target_position.y != 0)
+			norm_velocity = target_position.normalize();
+		transform.pos.x += norm_velocity.x * m_bullet_config.S;
+		transform.pos.y += norm_velocity.y * m_bullet_config.S;
 
 	}
 }
