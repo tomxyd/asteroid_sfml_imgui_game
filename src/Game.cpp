@@ -250,13 +250,14 @@ void Game::run()
 
 		// System Functionality
 		s_user_input();
-		s_gui();
+		s_life_span();
 		if(m_movement)
 			s_movement();
 		s_collision();
+		s_gui();
 		s_render();
 
-		m_current_frame++;
+		++m_current_frame;
 	}
 
 	ImGui::SFML::Shutdown();
@@ -326,6 +327,7 @@ void Game::s_user_input()
 
 void Game::s_gui()
 {
+	int frame_count = m_current_frame;
 	ImGui::Begin("Geometry Wars");
 	if (ImGui::Button("Spawn Enemy"))
 	{
@@ -337,9 +339,8 @@ void Game::s_gui()
 		spawn_bullet(player(), Vec2f(1.f, 1.f));
 	}
 
-	ImGui::BeginGroup();
 	ImGui::Checkbox("Movement", &m_movement);
-	ImGui::EndGroup();
+	ImGui::Text("Current frame: %.00f", frame_count);
 
 	auto& player_pos = player()->get<CTransform>().pos;
 	ImGui::Text("Player Position: %.0f , %.0f", player_pos.x, player_pos.y);
@@ -492,11 +493,22 @@ void Game::s_collision()
 
 void Game::s_life_span()
 {
-	//TO DO: Implement all life span functionality
 	for (auto& e : m_entities.get_entities("bullet"))
 	{
 		auto& lifespan = e->get<CLifespan>();
-		
+
+		if(lifespan.remaining > 0)
+			lifespan.remaining -= 1;
+
+		if (e->is_alive())
+		{
+			sf::Color color = e->get<CShape>().shape.getFillColor();
+			color.a -= 1;
+			e->get<CShape>().shape.setFillColor(color);
+		}
+
+		if (lifespan.remaining <= 0)
+			e->destroy();
 	}
 }
 
@@ -548,10 +560,12 @@ void Game::spawn_enemy()
 	// pick a number between VMIN and VMAX
 	std::uniform_int_distribution<int> dist(m_enemy_config.V_MIN, m_enemy_config.V_MAX);
 	int vertices = dist(rd);
+	//pick a random color
+	std::uniform_int_distribution<int> col(0, 255);
 	e->add<CShape>(static_cast<float>(
 		m_enemy_config.SR),
 		vertices,
-		sf::Color{0,0,0},
+		sf::Color{(sf::Uint8)col(rd),(sf::Uint8)col(rd),(sf::Uint8)col(rd)},
 		sf::Color{ (sf::Uint8)m_enemy_config.OR, (sf::Uint8)m_enemy_config.OG,(sf::Uint8)m_enemy_config.OB },
 		m_enemy_config.OT
 	);
@@ -591,7 +605,7 @@ void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
 	);
 
 	//add lifespan to entity
-	e->add<CLifespan>();
+	e->add<CLifespan>(m_bullet_config.L);
 }
 
 void Game::spawn_special_weapon(std::shared_ptr<Entity> entity)

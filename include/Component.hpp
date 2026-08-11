@@ -14,6 +14,7 @@ class CTransform : public Component
 public:
 	Vec2f pos = { 0.f,0.f };
 	Vec2f vel = { 0.f,0.f };
+	float angle = 0;
 	CTransform() = default;
 	CTransform(Vec2f position)
 		:pos(position) { }
