@@ -242,7 +242,6 @@ void Game::init(const std::string& config)
 void Game::run()
 {
 	// TO DO: add pause functionality here
-
 	while (true)
 	{
 		m_entities.update();
@@ -260,13 +259,10 @@ void Game::run()
 	}
 
 	ImGui::SFML::Shutdown();
-
 }
 
 void Game::s_user_input()
 {
-	//TO DO: handle user input here
-	// 
 	if (!player()->is_alive())
 		return;
 
@@ -286,38 +282,38 @@ void Game::s_user_input()
 		if ((event.type == sf::Event::KeyPressed))
 		{
 			if (event.key.code == sf::Keyboard::D)
-				player_input.x_axis = 1;
+				player_input.right = 1;
 			
 			if(event.key.code == sf::Keyboard::A)
-				player_input.x_axis = -1;
+				player_input.left = -1;
 
 			if (event.key.code == sf::Keyboard::W)
-				player_input.y_axis = -1;
+				player_input.up = -1;
 
 			if (event.key.code == sf::Keyboard::S)
-				player_input.y_axis = 1;
+				player_input.down = 1;
 
 		}
 		else if((event.type == sf::Event::KeyReleased))
 		{
 			if (event.key.code == sf::Keyboard::D)
-				player_input.x_axis = 0;
+				player_input.right = 0;
 
 			if (event.key.code == sf::Keyboard::A)
-				player_input.x_axis = 0;
+				player_input.left = 0;
 
 			if (event.key.code == sf::Keyboard::W)
-				player_input.y_axis = 0;
+				player_input.up = 0;
 
 			if (event.key.code == sf::Keyboard::S)
-				player_input.y_axis = 0;
+				player_input.down = 0;
 		}
 
 
 		Vec2i mouse_position = sf::Mouse::getPosition(m_window);
 		if ((event.type == sf::Event::MouseButtonPressed) && event.mouseButton.button == sf::Mouse::Left)
 		{
-
+			//TO DO: if input is shoot, spawn bullet
 		}
 	}
 }
@@ -334,6 +330,9 @@ void Game::s_gui()
 	{
 		spawn_bullet(player(), Vec2f(1.f, 1.f));
 	}
+
+	auto& player_pos = player()->get<CTransform>().pos;
+	ImGui::Text("Player Position: %.0f , %.0f", player_pos.x, player_pos.y);
 
 	ImGui::End();
 	ImGui::EndFrame();
@@ -362,14 +361,39 @@ void Game::s_movement()
 	{
 		e->get<CShape>().get_shape().setPosition(e->get<CTransform>().pos);
 	}
+
 	if (!player()->is_alive())
 		return;
 
 	auto& player_input = player()->get<CInput>();
 	auto& transform = player()->get<CTransform>();
-	Vec2f velocity(player_input.x_axis * transform.vel.x, player_input.y_axis * transform.vel.y);
+
+	//Restrict player's movement to the window screen
+	if (transform.pos.x - m_player_config.SR <= 0)
+		player_input.left = 0;
+	if (transform.pos.x + m_player_config.SR >= m_window_config.X)
+		player_input.right = 0;
+	if (transform.pos.y - m_player_config.SR <= 0)
+		player_input.up = 0;
+	if (transform.pos.y + m_player_config.SR >= m_window_config.Y)
+		player_input.down = 0;
+
+
+	if (player_input.left != 0 || player_input.right != 0)
+	{
+		transform.pos.x += player_input.left * m_player_config.s;
+		transform.pos.x += player_input.right * m_player_config.s;
+	}
+
+	if (player_input.up != 0 || player_input.down != 0)
+	{
+		transform.pos.y += player_input.up * m_player_config.s;
+		transform.pos.y += player_input.down * m_player_config.s;
+	}
 	//TO DO: Normalize movement to make it the velocity uniform diagonally
-	transform.pos += velocity;
+
+
+		
 
 	for (auto& e : m_entities.get_entities("bullet"))
 	{
@@ -416,7 +440,7 @@ void Game::s_collision()
 	if (!player()->is_alive())
 		return;
 
-	Vec2f player_pos = player()->get<CTransform>().pos;
+	Vec2f& player_pos = player()->get<CTransform>().pos;
 	for (auto e : m_entities.get_entities("enemy"))
 	{
 		//collision between player and enemies
@@ -428,8 +452,8 @@ void Game::s_collision()
 		{
 			//collided
 			std::cout << "player collides with: " << e->tag() << e->id() << '\n';
-			//player()->destroy();
-			//pause game for now
+			Vec2f screen_middle_pos{ m_window_config.X / 2, m_window_config.Y / 2 };
+			player_pos = screen_middle_pos;
 		}
 
 	}
