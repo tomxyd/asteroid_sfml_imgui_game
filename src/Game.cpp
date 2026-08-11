@@ -236,7 +236,7 @@ void Game::init(const std::string& config)
 
 	spawn_player();
 
-	spawn_enemy();
+	//spawn_enemy();
 }
 
 void Game::run()
@@ -251,7 +251,8 @@ void Game::run()
 		// System Functionality
 		s_user_input();
 		s_gui();
-		s_movement();
+		if(m_movement)
+			s_movement();
 		s_collision();
 		s_render();
 
@@ -282,38 +283,43 @@ void Game::s_user_input()
 		if ((event.type == sf::Event::KeyPressed))
 		{
 			if (event.key.code == sf::Keyboard::D)
-				player_input.right = 1;
+				player_input.right = true;
 			
 			if(event.key.code == sf::Keyboard::A)
-				player_input.left = -1;
+				player_input.left = true;
 
 			if (event.key.code == sf::Keyboard::W)
-				player_input.up = -1;
+				player_input.up = true;
 
 			if (event.key.code == sf::Keyboard::S)
-				player_input.down = 1;
+				player_input.down = true;
 
 		}
 		else if((event.type == sf::Event::KeyReleased))
 		{
 			if (event.key.code == sf::Keyboard::D)
-				player_input.right = 0;
+				player_input.right = false;
 
 			if (event.key.code == sf::Keyboard::A)
-				player_input.left = 0;
+				player_input.left = false;
 
 			if (event.key.code == sf::Keyboard::W)
-				player_input.up = 0;
+				player_input.up = false;
 
 			if (event.key.code == sf::Keyboard::S)
-				player_input.down = 0;
+				player_input.down = false;
 		}
 
 
 		Vec2i mouse_position = sf::Mouse::getPosition(m_window);
-		if ((event.type == sf::Event::MouseButtonPressed) && event.mouseButton.button == sf::Mouse::Left)
+		if ((event.type == sf::Event::MouseButtonPressed) && event.mouseButton.button == sf::Mouse::Right)
 		{
 			//TO DO: if input is shoot, spawn bullet
+			spawn_bullet(player(), Vec2f(mouse_position.x, mouse_position.y));
+		}
+		else if ((event.type == sf::Event::MouseButtonReleased) && event.mouseButton.button == sf::Mouse::Right)
+		{
+			//stop shooting
 		}
 	}
 }
@@ -330,6 +336,10 @@ void Game::s_gui()
 	{
 		spawn_bullet(player(), Vec2f(1.f, 1.f));
 	}
+
+	ImGui::BeginGroup();
+	ImGui::Checkbox("Movement", &m_movement);
+	ImGui::EndGroup();
 
 	auto& player_pos = player()->get<CTransform>().pos;
 	ImGui::Text("Player Position: %.0f , %.0f", player_pos.x, player_pos.y);
@@ -356,7 +366,7 @@ void Game::s_render()
 
 void Game::s_movement()
 {
-	// TO DO: implement all entity movement in this function
+	//Sets the position of all entities
 	for (auto& e : m_entities.get_entities())
 	{
 		e->get<CShape>().get_shape().setPosition(e->get<CTransform>().pos);
@@ -370,34 +380,55 @@ void Game::s_movement()
 
 	//Restrict player's movement to the window screen
 	if (transform.pos.x - m_player_config.SR <= 0)
-		player_input.left = 0;
+		player_input.left = false;
 	if (transform.pos.x + m_player_config.SR >= m_window_config.X)
-		player_input.right = 0;
+		player_input.right = false;
 	if (transform.pos.y - m_player_config.SR <= 0)
-		player_input.up = 0;
+		player_input.up = false;
 	if (transform.pos.y + m_player_config.SR >= m_window_config.Y)
-		player_input.down = 0;
+		player_input.down = false;
 
+	//Move player
+	int x_axis, y_axis = 0;
+	if (player_input.left)
+		x_axis = -1;
+	else if (player_input.right)
+		x_axis = 1;
+	else if (!player_input.left || !player_input.right)
+		x_axis = 0;
 
-	if (player_input.left != 0 || player_input.right != 0)
-	{
-		transform.pos.x += player_input.left * m_player_config.s;
-		transform.pos.x += player_input.right * m_player_config.s;
-	}
+	if (player_input.up)
+		y_axis = -1;
+	else if (player_input.down)
+		y_axis = 1;
+	else if(!player_input.up || !player_input.down)
+		y_axis = 0;
 
-	if (player_input.up != 0 || player_input.down != 0)
-	{
-		transform.pos.y += player_input.up * m_player_config.s;
-		transform.pos.y += player_input.down * m_player_config.s;
-	}
-	//TO DO: Normalize movement to make it the velocity uniform diagonally
+	Vec2f velocity = Vec2f(x_axis, y_axis);
+	Vec2f norm_velocity = Vec2f(0.f, 0.f);
 
+	//Normalize movement to make it the velocity uniform diagonally
+	if (velocity.x != 0 || velocity.y != 0)
+		norm_velocity = velocity.normalize();
+	else
+		norm_velocity = Vec2f(0.f, 0.f);
 
+	transform.vel = norm_velocity;
+
+	transform.pos.x += transform.vel.x * m_player_config.s;
+	transform.pos.y += transform.vel.y * m_player_config.s;
 		
+	// Move bullets towards mouse position, mouse position being the velocity
 
 	for (auto& e : m_entities.get_entities("bullet"))
 	{
-		auto& transform = e->get<CTransform>().pos;
+		auto& transform = e->get<CTransform>();
+		//move towards mouse position
+		Vec2f target_position = transform.vel - transform.pos;
+		Vec2f norm_target = target_position.normalize();
+		transform.pos.x += norm_target.x * m_bullet_config.S;
+		transform.pos.y += norm_target.y * m_bullet_config.S;
+
 	}
 }
 
@@ -459,6 +490,16 @@ void Game::s_collision()
 	}
 }
 
+void Game::s_life_span()
+{
+	//TO DO: Implement all life span functionality
+	for (auto& e : m_entities.get_entities("bullet"))
+	{
+		auto& lifespan = e->get<CLifespan>();
+		
+	}
+}
+
 void Game::s_enemy_spawner()
 {
 
@@ -473,7 +514,7 @@ void Game::spawn_player()
 
 	//give this entity a transform so it spawns at middle of the screen
 	Vec2f screen_middle_pos{ m_window_config.X / 2, m_window_config.Y / 2 };
-	e->add<CTransform>(screen_middle_pos, Vec2f(m_player_config.s, m_player_config.s));
+	e->add<CTransform>(screen_middle_pos, Vec2f(0.f, 0.f));
 
 	//give this entity a shape
 	e->add<CShape>(static_cast<float>(
@@ -538,7 +579,7 @@ void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
 
 	//spawn bullet at entity pos
 	Vec2f entity_pos = entity->get<CTransform>().pos;
-	e->add<CTransform>(entity_pos, Vec2f(1.f, 1.f));
+	e->add<CTransform>(entity_pos, mouse_pos);
 
 	//add Shape to entity
 	e->add<CShape>(
@@ -550,16 +591,12 @@ void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
 	);
 
 	//add lifespan to entity
+	e->add<CLifespan>();
 }
 
 void Game::spawn_special_weapon(std::shared_ptr<Entity> entity)
 {
 	// TO DO: Implement your own special weapon
-}
-
-void Game::s_life_span()
-{
-	//TO DO: Implement all life span functionality
 }
 
 std::shared_ptr<Entity> Game::player()

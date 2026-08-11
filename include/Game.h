@@ -36,6 +36,7 @@ private:
 	int m_last_enemy_spawn_time = 0;
 	bool m_paused;
 	bool m_running;
+	bool m_movement = true;
 
 	void init(const std::string& config); // initialize the game state with a config file
 	void read_window_data(std::stringstream& ss);

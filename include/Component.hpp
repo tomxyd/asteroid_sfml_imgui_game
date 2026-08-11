@@ -58,20 +58,23 @@ public:
 class CLifespan : public Component
 {
 public:
-	int lifespan;
-	int remaining;
+	int lifespan = 0;
+	int remaining = 0;
 	CLifespan() {};
+	CLifespan(int total_lifespan)
+		: lifespan(total_lifespan), remaining(total_lifespan)
+	{ }
 };
 
 
 class CInput : public Component
 {
 public:
-	int up = 0;
-	int down = 0;
-	int left = 0;
-	int right = 0;
-	int shoot = 0;
+	bool up = false;
+	bool down = false;
+	bool left = false;
+	bool right = false;
+	bool shoot = false;
 	CInput() {};
 };
 
