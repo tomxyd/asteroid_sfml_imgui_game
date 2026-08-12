@@ -368,9 +368,11 @@ void Game::s_render()
 void Game::s_movement()
 {
 	//Sets the position of all entities
-	for (auto& e : m_entities.get_entities())
+	for (auto e : m_entities.get_entities())
 	{
-		e->get<CShape>().get_shape().setPosition(e->get<CTransform>().pos);
+		auto& shape = e->get<CShape>().get_shape();
+		shape.setPosition(e->get<CTransform>().pos);
+		shape.setRotation(45 * (m_current_frame * 0.05f));
 	}
 
 	if (!player()->is_alive())
@@ -429,7 +431,22 @@ void Game::s_movement()
 			norm_velocity = target_position.normalize();
 		transform.pos.x += norm_velocity.x * m_bullet_config.S;
 		transform.pos.y += norm_velocity.y * m_bullet_config.S;
+	}
 
+	for (auto e : m_entities.get_entities("enemy"))
+	{
+		auto& transform = e->get<CTransform>();
+		transform.pos += transform.vel;
+		if (transform.pos.x < 0 || transform.pos.x + m_enemy_config.CR >= m_window_config.X)
+			transform.vel.x *= -1;
+		if (transform.pos.y < 0 || transform.pos.y + m_enemy_config.CR >= m_window_config.Y)
+			transform.vel.y *= -1;
+	}
+
+	for (auto e : m_entities.get_entities("small enemy"))
+	{
+		auto& transform = e->get<CTransform>();
+		transform.pos += transform.vel;
 	}
 }
 
@@ -444,27 +461,16 @@ void Game::s_collision()
 		{
 			// do collision logic
 			Vec2f enemy_pos = e->get<CTransform>().pos;
-			Vec2f enemy_radii{ enemy_pos.x + m_enemy_config.CR, enemy_pos.y + m_enemy_config.CR };
+			float e_collision_radius = e->get<CCollision>().radius;
+			float b_collision_radius = b->get<CCollision>().radius;
+			Vec2f enemy_radii{ enemy_pos.x + e_collision_radius, enemy_pos.y + e_collision_radius };
 			Vec2f bullet_pos = b->get<CTransform>().pos;
-			Vec2f bullet_radii{ bullet_pos.x + m_bullet_config.CR, bullet_pos.y + m_bullet_config.CR };
+			Vec2f bullet_radii{ bullet_pos.x + b_collision_radius, bullet_pos.y + b_collision_radius };
 			float distance = enemy_radii.dist(bullet_radii);
-			if (distance < m_enemy_config.CR + m_bullet_config.CR)
+			if (distance < e_collision_radius + b_collision_radius)
 			{
-				//spawn small enemies
-			}
-		}
-
-		for (auto s : m_entities.get_entities("small enemy"))
-		{
-			// do collision logic
-			Vec2f small_enemy_pos = s->get<CTransform>().pos;
-			Vec2f enemy_radii{ small_enemy_pos.x + m_enemy_config.CR, small_enemy_pos.y + m_enemy_config.CR };
-			Vec2f bullet_pos = b->get<CTransform>().pos;
-			Vec2f bullet_radii{ bullet_pos.x + m_bullet_config.CR, bullet_pos.y + m_bullet_config.CR };
-			float distance = enemy_radii.dist(bullet_radii);
-			if (distance < m_enemy_config.CR + m_bullet_config.CR)
-			{
-				//spawn small enemies
+				spawn_small_enemies(e);
+				e->destroy();
 			}
 		}
 	}
@@ -476,16 +482,19 @@ void Game::s_collision()
 	for (auto e : m_entities.get_entities("enemy"))
 	{
 		//collision between player and enemies
+		float e_collision_radius = e->get<CCollision>().radius;
 		Vec2f enemy_pos = e->get<CTransform>().pos;
-		Vec2f enemy_radii{ enemy_pos.x + m_enemy_config.CR, enemy_pos.y + m_enemy_config.CR };
+		Vec2f enemy_radii{ enemy_pos.x + e_collision_radius, enemy_pos.y + e_collision_radius };
 		Vec2f player_radii = Vec2f(player_pos.x + m_player_config.CR, player_pos.y + m_player_config.CR);
 		float distance = enemy_radii.dist(player_radii);
-		if (distance < m_player_config.CR + m_enemy_config.CR)
+		if (distance < m_player_config.CR + e_collision_radius)
 		{
 			//collided
 			std::cout << "player collides with: " << e->tag() << e->id() << '\n';
 			Vec2f screen_middle_pos{ m_window_config.X / 2, m_window_config.Y / 2 };
 			player_pos = screen_middle_pos;
+			spawn_small_enemies(e);
+			e->destroy();
 		}
 
 	}
@@ -493,22 +502,24 @@ void Game::s_collision()
 
 void Game::s_life_span()
 {
-	for (auto& e : m_entities.get_entities("bullet"))
+	for (auto& e : m_entities.get_entities())
 	{
 		auto& lifespan = e->get<CLifespan>();
-
-		if(lifespan.remaining > 0)
-			lifespan.remaining -= 1;
-
-		if (e->is_alive())
+		if (lifespan.exists)
 		{
-			sf::Color color = e->get<CShape>().shape.getFillColor();
-			color.a -= 1;
-			e->get<CShape>().shape.setFillColor(color);
-		}
+			if (lifespan.remaining > 0)
+				lifespan.remaining -= 1;
 
-		if (lifespan.remaining <= 0)
-			e->destroy();
+			if (e->is_alive())
+			{
+				sf::Color color = e->get<CShape>().shape.getFillColor();
+				color.a -= 1;
+				e->get<CShape>().shape.setFillColor(color);
+			}
+
+			if (lifespan.remaining <= 0)
+				e->destroy();
+		}
 	}
 }
 
@@ -549,12 +560,15 @@ void Game::spawn_enemy()
 	auto e = m_entities.add_entity("enemy");
 
 	//give entity a transform
-	std::uniform_int_distribution<int> posX(0, m_window_config.X);
-	std::uniform_int_distribution<int> posY(0, m_window_config.Y);
+	std::uniform_int_distribution<int> posX(0, m_window_config.X - m_enemy_config.SR);
+	std::uniform_int_distribution<int> posY(0, m_window_config.Y - m_enemy_config.SR);
 
-	Vec2f random_pos{ static_cast<float>(posX(rd)), static_cast<float>(posY(rd)) };
-	e->add<CTransform>(random_pos, Vec2f(1.f, 1.f));
+	std::uniform_int_distribution<int> speed(m_enemy_config.S_MIN, m_enemy_config.S_MAX);
 	// - provide a random range of position within the bounds of the window
+	Vec2f random_pos{ static_cast<float>(posX(rd)), static_cast<float>(posY(rd)) };
+	Vec2f random_speed(static_cast<float>(speed(rd)), static_cast<float>(speed(rd)));
+	e->add<CTransform>(random_pos,random_speed);
+	
 
 	//give entity a shape
 	// pick a number between VMIN and VMAX
@@ -570,7 +584,7 @@ void Game::spawn_enemy()
 		m_enemy_config.OT
 	);
 
-
+	e->add<CCollision>(m_enemy_config.CR);
 	/// \TO DO: give entity life span component
 
 	m_last_enemy_spawn_time = m_current_frame;
@@ -584,6 +598,24 @@ void Game::spawn_small_enemies(std::shared_ptr<Entity> entity)
 	// - spawn a number of small enemies equal to the vertices of the enemy
 	//  - set each small enemy to the same color as the original, and half the size
 	// - small enemies are worth double the score of original enemies
+	int sides = entity->get<CShape>().shape.getPointCount();
+	Vec2f spawn_pos = entity->get<CTransform>().pos;
+	int radius = 8;
+	sf::Color color = entity->get<CShape>().shape.getFillColor();
+
+	for (std::size_t i = 0; i < sides; ++i)
+	{
+		auto s = m_entities.add_entity("small enemy");
+
+		float angle = 360 / (i + 1);
+		Vec2f velocity{ std::cos(angle), std::sin(angle) };
+
+		s->add<CTransform>(spawn_pos, velocity);
+
+		s->add<CShape>(radius, sides, color, sf::Color::White, 0);
+
+		s->add<CLifespan>(30);
+	}
 }
 
 void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
@@ -603,6 +635,8 @@ void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
 		sf::Color{ (sf::Uint8)m_bullet_config.OR, (sf::Uint8)m_bullet_config.OG,(sf::Uint8)m_bullet_config.OB },
 		m_bullet_config.OT
 	);
+
+	e->add<CCollision>(m_bullet_config.CR);
 
 	//add lifespan to entity
 	e->add<CLifespan>(m_bullet_config.L);

@@ -46,6 +46,8 @@ class CCollision : public Component
 public:
 	float radius;
 	CCollision() {};
+	CCollision(int in_radius)
+		: radius(in_radius) { }
 };
 
 

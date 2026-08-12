@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <random>
+#include <cmath>
 #include "Entity.hpp"
 #include "EntityManager.hpp"
 #include "Vec2.hpp"
