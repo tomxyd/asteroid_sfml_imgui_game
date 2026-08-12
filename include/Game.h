@@ -4,6 +4,7 @@
 #include <SFML/Window.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -35,9 +36,13 @@ private:
 	int m_score = 0;
 	int m_current_frame = 0;
 	int m_last_enemy_spawn_time = 0;
+	int m_spawn_rate = 50;
 	bool m_paused;
 	bool m_running;
 	bool m_movement = true;
+	bool m_lifespan = true;
+	bool m_collision = true;
+	bool m_spawning = false;
 
 	void init(const std::string& config); // initialize the game state with a config file
 	void read_window_data(std::stringstream& ss);

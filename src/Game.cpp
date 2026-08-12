@@ -234,6 +234,10 @@ void Game::init(const std::string& config)
 	//ImGui::GetStyle().ScaleAllSizes(2.0f);
 	//ImGui::GetIO().FontGlobalScale = 2.0f;
 
+	if(!m_font.loadFromFile(RESOURCES_PATH "font/Angeline.ttf"))
+		std::cout << "Could not load font\n";
+	m_text.setString("Score: 0");
+	m_text.setPosition({ 10.f, 10.f });
 	spawn_player();
 
 	//spawn_enemy();
@@ -250,12 +254,17 @@ void Game::run()
 
 		// System Functionality
 		s_user_input();
-		s_life_span();
+		if (m_spawning)
+			s_enemy_spawner();
+		if(m_lifespan)
+			s_life_span();
 		if(m_movement)
 			s_movement();
-		s_collision();
+		if(m_collision)
+			s_collision();
 		s_gui();
 		s_render();
+		
 
 		++m_current_frame;
 	}
@@ -327,23 +336,98 @@ void Game::s_user_input()
 
 void Game::s_gui()
 {
-	int frame_count = m_current_frame;
 	ImGui::Begin("Geometry Wars");
-	if (ImGui::Button("Spawn Enemy"))
-	{
-		spawn_enemy();
-	};
 
-	if (ImGui::Button("Spawn Bullet"))
+	//bool show = true;
+	//ImGui::ShowDemoWindow(&show);
+	if (ImGui::BeginTabBar("##TabBar"))
 	{
-		spawn_bullet(player(), Vec2f(1.f, 1.f));
+		if (ImGui::BeginTabItem("Systems"))
+		{
+			ImGui::Checkbox("Movement", &m_movement);
+			ImGui::Checkbox("Lifespan", &m_lifespan);
+			ImGui::Checkbox("Collision", &m_collision);
+			ImGui::Checkbox("Spawner", &m_spawning);
+			ImGui::SliderInt("Spawn Time", &m_spawn_rate, 30, 100);
+			if (ImGui::Button("Manual Spawn"))
+			{
+				spawn_enemy();
+			}
+
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Entity Manager"))
+		{
+			if (ImGui::CollapsingHeader("Entity by Tag"))
+			{
+				ImGui::Spacing();
+				if (ImGui::CollapsingHeader("bullet"))
+				{
+					for (auto e : m_entities.get_entities("bullet"))
+					{
+						ImGui::Text("%.0f", e->id());
+						ImGui::SameLine();
+						ImGui::Text(e->tag().c_str());
+						Vec2f& entity_pos = e->get<CTransform>().pos;
+						ImGui::SameLine();
+						ImGui::Text("(%.0f , %.0f)", entity_pos.x, entity_pos.y);
+					}
+				}
+				if (ImGui::CollapsingHeader("enemy"))
+				{
+					for (auto e : m_entities.get_entities("enemy"))
+					{
+						ImGui::Text("%.0f", e->id());
+						ImGui::SameLine();
+						ImGui::Text(e->tag().c_str());
+						Vec2f& entity_pos = e->get<CTransform>().pos;
+						ImGui::SameLine();
+						ImGui::Text("(%.0f , %.0f)", entity_pos.x, entity_pos.y);
+					}
+				}
+				if (ImGui::CollapsingHeader("player"))
+				{
+					ImGui::Text("%", player()->id());
+					ImGui::SameLine();
+					ImGui::Text(player()->tag().c_str());
+					Vec2f& entity_pos = player()->get<CTransform>().pos;
+					ImGui::SameLine();
+					ImGui::Text("(%.0f , %.0f)", entity_pos.x, entity_pos.y);
+					
+				}
+				if (ImGui::CollapsingHeader("small enemy"))
+				{
+					for (auto e : m_entities.get_entities("small enemy"))
+					{
+						ImGui::Text("%.0f", e->id());
+						ImGui::SameLine();
+						ImGui::Text(e->tag().c_str());
+						Vec2f& entity_pos = e->get<CTransform>().pos;
+						ImGui::SameLine();
+						ImGui::Text("(%.0f , %.0f)", entity_pos.x, entity_pos.y);
+					}
+				}
+
+			}
+			if (ImGui::CollapsingHeader("All Entities"))
+			{
+				for (auto e : m_entities.get_entities())
+				{
+					ImGui::Text("%.0f", e->id());
+					ImGui::SameLine();
+					ImGui::Text(e->tag().c_str());
+					Vec2f& entity_pos = e->get<CTransform>().pos;
+					ImGui::SameLine();
+					ImGui::Text("(%.0f , %.0f)", entity_pos.x, entity_pos.y);
+				}
+			}
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
 	}
 
-	ImGui::Checkbox("Movement", &m_movement);
-	ImGui::Text("Current frame: %.00f", frame_count);
 
-	auto& player_pos = player()->get<CTransform>().pos;
-	ImGui::Text("Player Position: %.0f , %.0f", player_pos.x, player_pos.y);
 
 	ImGui::End();
 	ImGui::EndFrame();
@@ -359,6 +443,8 @@ void Game::s_render()
 	{
 		m_window.draw(e->get<CShape>().get_shape());
 	}
+
+	m_window.draw(m_text);
 
 	ImGui::SFML::Render(m_window);
 
@@ -443,10 +529,13 @@ void Game::s_movement()
 			transform.vel.y *= -1;
 	}
 
+	int speed = 2;
 	for (auto e : m_entities.get_entities("small enemy"))
 	{
 		auto& transform = e->get<CTransform>();
-		transform.pos += transform.vel;
+		transform.pos.x += (transform.vel.x * speed);
+		transform.pos.y += (transform.vel.y * speed);
+
 	}
 }
 
@@ -470,7 +559,12 @@ void Game::s_collision()
 			if (distance < e_collision_radius + b_collision_radius)
 			{
 				spawn_small_enemies(e);
+				m_score += e->get<CScore>().score;
+				std::ostringstream ss;
+				ss << "Score: " << m_score;
+				m_text.setString(ss.str());
 				e->destroy();
+				b->destroy();
 			}
 		}
 	}
@@ -490,7 +584,6 @@ void Game::s_collision()
 		if (distance < m_player_config.CR + e_collision_radius)
 		{
 			//collided
-			std::cout << "player collides with: " << e->tag() << e->id() << '\n';
 			Vec2f screen_middle_pos{ m_window_config.X / 2, m_window_config.Y / 2 };
 			player_pos = screen_middle_pos;
 			spawn_small_enemies(e);
@@ -525,7 +618,12 @@ void Game::s_life_span()
 
 void Game::s_enemy_spawner()
 {
-
+	int m_time_between_spawns = m_current_frame - m_last_enemy_spawn_time;
+	if (m_time_between_spawns >= m_spawn_rate)
+	{
+		spawn_enemy();
+		m_last_enemy_spawn_time = m_current_frame;
+	}
 }
 
 void Game::spawn_player()
@@ -585,9 +683,10 @@ void Game::spawn_enemy()
 	);
 
 	e->add<CCollision>(m_enemy_config.CR);
-	/// \TO DO: give entity life span component
+	
 
-	m_last_enemy_spawn_time = m_current_frame;
+	e->add<CScore>(vertices * 100);
+
 }
 
 void Game::spawn_small_enemies(std::shared_ptr<Entity> entity)
@@ -600,15 +699,16 @@ void Game::spawn_small_enemies(std::shared_ptr<Entity> entity)
 	// - small enemies are worth double the score of original enemies
 	int sides = entity->get<CShape>().shape.getPointCount();
 	Vec2f spawn_pos = entity->get<CTransform>().pos;
-	int radius = 8;
+	int radius = 10;
 	sf::Color color = entity->get<CShape>().shape.getFillColor();
-
+	const float pi = 3.14159265f;
 	for (std::size_t i = 0; i < sides; ++i)
 	{
 		auto s = m_entities.add_entity("small enemy");
 
 		float angle = 360 / (i + 1);
-		Vec2f velocity{ std::cos(angle), std::sin(angle) };
+		float radians = angle * (pi / 180);
+		Vec2f velocity{ std::cos(radians), std::sin(radians) };
 
 		s->add<CTransform>(spawn_pos, velocity);
 

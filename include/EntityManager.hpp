@@ -55,7 +55,8 @@ public:
 	std::shared_ptr<Entity> add_entity(const std::string& tag)
 	{
 		//create a new Entity object
-		auto e = std::make_shared<Entity>(tag, m_total_entities++);
+		++m_total_entities;
+		auto e = std::make_shared<Entity>(tag, m_total_entities);
 		//store it in the vector of all entities
 		m_entities.push_back(e);
 		//store it in the map of tag->entityvector

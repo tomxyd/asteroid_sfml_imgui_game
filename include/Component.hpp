@@ -56,6 +56,8 @@ class CScore : public Component
 public:
 	int score = 0;
 	CScore() {};
+	CScore(int in_score)
+		: score(in_score) {}
 };
 
 class CLifespan : public Component
