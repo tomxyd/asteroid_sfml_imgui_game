@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(PROJECT_NAME default)
+set(PROJECT_NAME Geometry_Wars)
 project("${PROJECT_NAME}" VERSION 1.0)
 
 include(FetchContent)

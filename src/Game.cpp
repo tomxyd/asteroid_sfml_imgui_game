@@ -366,7 +366,13 @@ void Game::s_gui()
 				{
 					for (auto e : m_entities.get_entities("bullet"))
 					{
-						ImGui::Text("%.0f", e->id());
+						if (ImGui::Button("D"))
+						{
+							e->destroy();
+							continue;
+						}
+						ImGui::SameLine();
+						ImGui::Text("%d", e->id());
 						ImGui::SameLine();
 						ImGui::Text(e->tag().c_str());
 						Vec2f& entity_pos = e->get<CTransform>().pos;
@@ -378,7 +384,13 @@ void Game::s_gui()
 				{
 					for (auto e : m_entities.get_entities("enemy"))
 					{
-						ImGui::Text("%.0f", e->id());
+						if (ImGui::Button("D"))
+						{
+							e->destroy();
+							continue;
+						}
+						ImGui::SameLine();
+						ImGui::Text("%d", e->id());
 						ImGui::SameLine();
 						ImGui::Text(e->tag().c_str());
 						Vec2f& entity_pos = e->get<CTransform>().pos;
@@ -388,7 +400,7 @@ void Game::s_gui()
 				}
 				if (ImGui::CollapsingHeader("player"))
 				{
-					ImGui::Text("%", player()->id());
+					ImGui::Text("%d", player()->id());
 					ImGui::SameLine();
 					ImGui::Text(player()->tag().c_str());
 					Vec2f& entity_pos = player()->get<CTransform>().pos;
@@ -400,7 +412,13 @@ void Game::s_gui()
 				{
 					for (auto e : m_entities.get_entities("small enemy"))
 					{
-						ImGui::Text("%.0f", e->id());
+						if (ImGui::Button("D"))
+						{
+							e->destroy();
+							continue;
+						}
+						ImGui::SameLine();
+						ImGui::Text("%d", e->id());
 						ImGui::SameLine();
 						ImGui::Text(e->tag().c_str());
 						Vec2f& entity_pos = e->get<CTransform>().pos;
@@ -412,9 +430,11 @@ void Game::s_gui()
 			}
 			if (ImGui::CollapsingHeader("All Entities"))
 			{
+
 				for (auto e : m_entities.get_entities())
 				{
-					ImGui::Text("%.0f", e->id());
+
+					ImGui::Text("%d", e->id());
 					ImGui::SameLine();
 					ImGui::Text(e->tag().c_str());
 					Vec2f& entity_pos = e->get<CTransform>().pos;
@@ -541,8 +561,6 @@ void Game::s_movement()
 
 void Game::s_collision()
 {
-	// TO DO: Implement all proper collisions between entities
-	// be sure to use collision radius and not shape radius
 
 	for (auto b : m_entities.get_entities("bullet"))
 	{
