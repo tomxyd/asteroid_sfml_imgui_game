@@ -21,10 +21,10 @@ void Game::read_window_data(std::stringstream& ss)
 		switch (word_count)
 		{
 		case 1:
-			m_window_config.X = value;
+			m_window_config.X = (float)value;
 			break;
 		case 2:
-			m_window_config.Y = value;
+			m_window_config.Y = (float)value;
 			break;
 		case 3:
 			m_window_config.FR = value;
@@ -88,24 +88,32 @@ void Game::init(const std::string& config)
 							m_player_config.CR = value;
 							break;
 						case 3:
-							m_player_config.s = value;
+							m_player_config.s = (float)value;
 							break;
 						case 4:
 							m_player_config.FR = value;
+							break;
 						case 5:
 							m_player_config.FG = value;
+							break;
 						case 6:
 							m_player_config.FB = value;
+							break;
 						case 7:
 							m_player_config.OR = value;
+							break;
 						case 8:
 							m_player_config.OG = value;
+							break;
 						case 9:
 							m_player_config.OB = value;
+							break;
 						case 10:
 							m_player_config.OT = value;
+							break;
 						case 11:
 							m_player_config.V = value;
+							break;
 						default:
 							break;
 						}
@@ -128,10 +136,10 @@ void Game::init(const std::string& config)
 							m_enemy_config.CR = value;
 							break;
 						case 3:
-							m_enemy_config.S_MIN = value;
+							m_enemy_config.S_MIN = (float)value;
 							break;
 						case 4:
-							m_enemy_config.S_MAX = value;
+							m_enemy_config.S_MAX = (float)value;
 							break;
 						case 5:
 							m_enemy_config.OR = value;
@@ -178,7 +186,7 @@ void Game::init(const std::string& config)
 							m_bullet_config.CR = value;
 							break;
 						case 3:
-							m_bullet_config.S = value;
+							m_bullet_config.S = (float)value;
 							break;
 						case 4:
 							m_bullet_config.FR = value;
@@ -325,7 +333,7 @@ void Game::s_user_input()
 		if ((event.type == sf::Event::MouseButtonPressed) && event.mouseButton.button == sf::Mouse::Right)
 		{
 			//TO DO: if input is shoot, spawn bullet
-			spawn_bullet(player(), Vec2f(mouse_position.x, mouse_position.y));
+			spawn_bullet(player(), mouse_position);
 		}
 		else if ((event.type == sf::Event::MouseButtonReleased) && event.mouseButton.button == sf::Mouse::Right)
 		{
@@ -473,6 +481,7 @@ void Game::s_render()
 
 void Game::s_movement()
 {
+
 	//Sets the position of all entities
 	for (auto e : m_entities.get_entities())
 	{
@@ -543,9 +552,9 @@ void Game::s_movement()
 	{
 		auto& transform = e->get<CTransform>();
 		transform.pos += transform.vel;
-		if (transform.pos.x < 0 || transform.pos.x + m_enemy_config.CR >= m_window_config.X)
+		if (transform.pos.x  - m_enemy_config.SR < 0 || transform.pos.x + m_enemy_config.CR >= m_window_config.X)
 			transform.vel.x *= -1;
-		if (transform.pos.y < 0 || transform.pos.y + m_enemy_config.CR >= m_window_config.Y)
+		if (transform.pos.y - m_enemy_config.SR < 0 || transform.pos.y + m_enemy_config.CR >= m_window_config.Y)
 			transform.vel.y *= -1;
 	}
 
@@ -561,15 +570,14 @@ void Game::s_movement()
 
 void Game::s_collision()
 {
-
+	float e_collision_radius = m_enemy_config.CR;
+	float b_collision_radius = m_bullet_config.CR;
 	for (auto b : m_entities.get_entities("bullet"))
 	{
 		for (auto e : m_entities.get_entities("enemy"))
 		{
 			// do collision logic
 			Vec2f enemy_pos = e->get<CTransform>().pos;
-			float e_collision_radius = e->get<CCollision>().radius;
-			float b_collision_radius = b->get<CCollision>().radius;
 			Vec2f enemy_radii{ enemy_pos.x + e_collision_radius, enemy_pos.y + e_collision_radius };
 			Vec2f bullet_pos = b->get<CTransform>().pos;
 			Vec2f bullet_radii{ bullet_pos.x + b_collision_radius, bullet_pos.y + b_collision_radius };
@@ -724,7 +732,7 @@ void Game::spawn_small_enemies(std::shared_ptr<Entity> entity)
 	{
 		auto s = m_entities.add_entity("small enemy");
 
-		float angle = 360 / (i + 1);
+		float angle = 360 / ((float)i + 1);
 		float radians = angle * (pi / 180);
 		Vec2f velocity{ std::cos(radians), std::sin(radians) };
 
@@ -736,14 +744,14 @@ void Game::spawn_small_enemies(std::shared_ptr<Entity> entity)
 	}
 }
 
-void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos)
+void Game::spawn_bullet(std::shared_ptr<Entity> entity, const Vec2i& mouse_pos)
 {
 	//create entity
 	auto e = m_entities.add_entity("bullet");
 
 	//spawn bullet at entity pos
 	Vec2f entity_pos = entity->get<CTransform>().pos;
-	e->add<CTransform>(entity_pos, mouse_pos);
+	e->add<CTransform>(entity_pos, Vec2f(mouse_pos.x, mouse_pos.y));
 
 	//add Shape to entity
 	e->add<CShape>(

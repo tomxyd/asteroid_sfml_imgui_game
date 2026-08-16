@@ -50,7 +50,6 @@ public:
 	Game(const std::string& config);
 	~Game();
 	void run();
-	void set_paused(bool paused); // pause the game
 
 	void s_movement();
 	void s_user_input();
@@ -68,7 +67,7 @@ public:
 	//////////////////////////////////////////////////////////////////
 	/// \brief Spawns a bullet at a given entity towards the mouse position
 	/////////////////////////////////////////////////////////////////
-	void spawn_bullet(std::shared_ptr<Entity> entity, const Vec2f& mouse_pos);
+	void spawn_bullet(std::shared_ptr<Entity> entity, const Vec2i& mouse_pos);
 	void spawn_special_weapon(std::shared_ptr<Entity> entity);
 
 	std::shared_ptr<Entity> player();

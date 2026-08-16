@@ -27,7 +27,7 @@ class CShape : public Component
 public:
 	sf::CircleShape shape;
 	CShape() {};
-	CShape(float radius, std::size_t vertices, const sf::Color& fill, const sf::Color& outline, const int& thickness)
+	CShape(float radius, std::size_t vertices, const sf::Color& fill, const sf::Color& outline, const float& thickness)
 		: shape(radius, vertices)
 	{
 		shape.setFillColor(fill);
@@ -44,9 +44,9 @@ public:
 class CCollision : public Component
 {
 public:
-	float radius;
+	float radius = 0.f;
 	CCollision() {};
-	CCollision(int in_radius)
+	CCollision(float in_radius)
 		: radius(in_radius) { }
 };
 
